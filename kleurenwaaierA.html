@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kleurtype Selector - Zoom effect</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f9f9f9;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 25px;
+      font-size: 2rem;
+      max-width: 320px;
+      line-height: 1.2;
+    }
+
+    .selector {
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 40px;
+      display: flex;
+      justify-content: center;
+    }
+
+    select {
+      width: 100%;
+      font-size: 1.1rem;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 1.5px solid #ccc;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+
+    select:focus {
+      border-color: #007BFF;
+      outline: none;
+      box-shadow: 0 0 5px rgba(0,123,255,0.6);
+    }
+
+    .kleurweergave {
+      width: 100%;
+      max-width: 900px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 24px;
+      padding: 0 10px;
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 0;
+    }
+
+    .kleurkaart {
+      border-radius: 18px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.12);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      height: 210px;
+      font-weight: 700;
+      text-align: center;
+      user-select: none;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      z-index: 1;
+    }
+
+    .kleurkaart span {
+      padding: 12px 10px;
+      width: 100%;
+      background: rgba(0,0,0,0.25);
+      color: inherit;
+      font-size: 1.1rem;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+      user-select: none;
+    }
+
+    /* Hover effect desktop */
+    @media (hover: hover) and (pointer: fine) {
+      .kleurkaart:not(.zoomed):hover {
+        transform: scale(1.08);
+        box-shadow: 0 10px 18px rgba(0,0,0,0.25);
+      }
+    }
+
+    /* Zoomed state */
+    .kleurkaart.zoomed {
+      grid-column: 1 / -1;
+      height: 400px;
+      transform: scale(1.15);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+      z-index: 10;
+      border-radius: 24px;
+    }
+
+    /* Wanneer een kaart zoomed is, verberg de anderen */
+    .kleurweergave.zoom-active .kleurkaart:not(.zoomed) {
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.8);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Responsive aanpassingen */
+    @media (max-width: 1024px) {
+      .kleurweergave {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .kleurweergave {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .kleurkaart {
+        height: 180px;
+      }
+      .kleurkaart span {
+        font-size: 1rem;
+        padding: 10px 8px;
+      }
+      .kleurkaart.zoomed {
+        height: 300px;
+        transform: scale(1.1);
+      }
+    }
+
+    @media (max-width: 400px) {
+      .kleurweergave {
+        grid-template-columns: 1fr;
+      }
+      body {
+        padding: 15px 10px 30px;
+      }
+      h1 {
+        font-size: 1.6rem;
+      }
+      select {
+        font-size: 1rem;
+        padding: 10px 14px;
+      }
+      .kleurkaart {
+        height: 160px;
+      }
+      .kleurkaart span {
+        font-size: 0.9rem;
+        padding: 8px 6px;
+      }
+      .kleurkaart.zoomed {
+        height: 280px;
+        transform: scale(1.1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Kies je kleurtype</h1>
+
+  <div class="selector">
+    <select id="kleurtypeSelector" aria-label="Selecteer je kleurtype">
+      <option value="" disabled selected>-- Selecteer een kleurtype --</option>
+      <option value="Lente">🌼 Lente</option>
+      <option value="Zomer">🌊 Zomer</option>
+      <option value="Herfst">🍂 Herfst</option>
+      <option value="Winter">❄️ Winter</option>
+    </select>
+  </div>
+
+  <main class="kleurweergave" id="kleurweergave" role="region" aria-live="polite" aria-label="Kleuren weergave"></main>
+
+  <script>
+    const kleurtypes = {
+      Lente: [
+        { naam: "Abrikoos", kleur: "#FFB347" },
+        { naam: "Koraal", kleur: "#FF7F50" },
+        { naam: "Warm geel", kleur: "#FFD700" },
+        { naam: "Licht turquoise", kleur: "#AFEEEE" },
+        { naam: "Perzik", kleur: "#FFE5B4" }
+      ],
+      Zomer: [
+        { naam: "Lavendel", kleur: "#E6E6FA" },
+        { naam: "Koel roze", kleur: "#F4C2C2" },
+        { naam: "Poederblauw", kleur: "#B0E0E6" },
+        { naam: "Zacht lila", kleur: "#D8BFD8" },
+        { naam: "Mistgrijs", kleur: "#C0C0C0" }
+      ],
+      Herfst: [
+        { naam: "Terracotta", kleur: "#E2725B" },
+        { naam: "Okergeel", kleur: "#CC7722" },
+        { naam: "Mosgroen", kleur: "#8A9A5B" },
+        { naam: "Diep oranje", kleur: "#FF8C00" },
+        { naam: "Kastanjebruin", kleur: "#8B4000" }
+      ],
+      Winter: [
+        { naam: "Koningsblauw", kleur: "#00008B" },
+        { naam: "Smaragdgroen", kleur: "#50C878" },
+        { naam: "Fuchsia", kleur: "#FF00FF" },
+        { naam: "Zwart", kleur: "#000000" },
+        { naam: "IJswit", kleur: "#F8F8FF" }
+      ]
+    };
+
+    const selector = document.getElementById('kleurtypeSelector');
+    const weergave = document.getElementById('kleurweergave');
+
+    let zoomedCard = null;
+
+    function getContrast(hex) {
+      const r = parseInt(hex.substr(1, 2), 16);
+      const g = parseInt(hex.substr(3, 2), 16);
+      const b = parseInt(hex.substr(5, 2), 16);
+      const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+      return yiq >= 128 ? "#000" : "#fff";
+    }
+
+    function createKleurkaart(naam, kleur) {
+      const kaart = document.createElement('div');
+      kaart.className = "kleurkaart";
+      kaart.style.backgroundColor = kleur;
+      kaart.style.color = getContrast(kleur);
+      kaart.setAttribute('tabindex', '0');
+      kaart.setAttribute('aria-label', naam + " kleur");
+      kaart.innerHTML = `<span>${naam}</span>`;
+
+      kaart.addEventListener('click', () => {
+        if (zoomedCard === kaart) {
+          // Uitzoomen
+          kaart.classList.remove('zoomed');
+          weergave.classList.remove('zoom-active');
+          zoomedCard = null;
+        } else {
+          // Inzoomen
+          if (zoomedCard) {
+            zoomedCard.classList.remove('zoomed');
+          }
+          kaart.classList.add('zoomed');
+          weergave.classList.add('zoom-active');
+          zoomedCard = kaart;
+        }
+      });
+
+      return kaart;
+    }
+
+    selector.addEventListener('change', () => {
+      const gekozenType = selector.value;
+      weergave.innerHTML = "";
+      zoomedCard = null;
+      weergave.classList.remove('zoom-active');
+
+      if (kleurtypes[gekozenType]) {
+        kleurtypes[gekozenType].forEach(({ naam, kleur }) => {
+          const kaart = createKleurkaart(naam, kleur);
+          weergave.appendChild(kaart);
+        });
+      }
+    });
+  </script>
+</body>
+</html>
